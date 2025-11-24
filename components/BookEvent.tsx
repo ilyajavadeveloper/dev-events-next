@@ -1,48 +1,55 @@
-'use client';
+"use client";
 
-import {useState} from "react";
-import {createBooking} from "@/lib/actions/booking.actions";
-import posthog from "posthog-js";
+import { useState } from "react";
+import { createBooking } from "@/lib/actions/booking.actions";
 
-const BookEvent = ({ eventId, slug }: { eventId: string, slug: string;}) => {
-    const [email, setEmail] = useState('');
-    const [submitted, setSubmitted] = useState(false);
+interface BookEventProps {
+    eventId: string;
+    slug: string;
+}
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+const BookEvent = ({ eventId, slug }: BookEventProps) => {
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState("");
 
-        const { success } = await createBooking({ eventId, slug, email });
+    const handleBooking = async () => {
+        if (!email.trim()) return;
 
-        if(success) {
-            setSubmitted(true);
-            posthog.capture('event_booked', { eventId, slug, email })
+        setLoading(true);
+
+        const res = await createBooking({
+            eventId,
+            email,
+        });
+
+        setLoading(false);
+
+        if (res.success) {
+            alert(`You booked event "${slug}" successfully!`);
         } else {
-            console.error('Booking creation failed')
-            posthog.captureException('Booking creation failed')
+            alert("Booking failed.");
         }
-    }
+    };
 
     return (
-        <div id="book-event">
-            {submitted ? (
-                <p className="text-sm">Thank you for signing up!</p>
-            ): (
-                <form onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor="email">Email Address</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            id="email"
-                            placeholder="Enter your email address"
-                        />
-                    </div>
+        <div className="flex flex-col gap-3">
+            <input
+                type="email"
+                placeholder="Enter your email"
+                className="input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+            />
 
-                    <button type="submit" className="button-submit">Submit</button>
-                </form>
-            )}
+            <button
+                onClick={handleBooking}
+                className="btn-primary"
+                disabled={loading}
+            >
+                {loading ? "Booking..." : "Book Now"}
+            </button>
         </div>
-    )
-}
-export default BookEvent
+    );
+};
+
+export default BookEvent;

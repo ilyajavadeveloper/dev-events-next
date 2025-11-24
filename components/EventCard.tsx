@@ -1,42 +1,53 @@
-import React from 'react'
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-interface Props {
-    title: string,
-    image: string,
-    slug: string,
-    location: string,
-    date: string,
-    time: string,
+export interface EventCardProps {
+    title: string;
+    image: string;
+    slug: string;
+    location: string;
+    date: string;
+    time: string;
 }
 
-
-const EventCard = ({title, image, slug, time, location, date}: Props) => {
+const EventCard = ({ title, image, slug, time, location, date }: EventCardProps) => {
     return (
-        <Link href={`/events${slug}`} id='event-card'>
-            <Image src={image} alt={title} width={410} height={300} className='poster'/>
+        <Link
+            href={`/events/${slug}`}
+            id="event-card"
+            className="block rounded-xl overflow-hidden bg-[#121212] hover:bg-[#1A1A1A] transition-all shadow-lg hover:shadow-xl"
+        >
+            <Image
+                src={image}
+                alt={title}
+                width={410}
+                height={300}
+                className="poster object-cover"
+            />
 
-            <div className='flex flex-row gap-2'>
-                <Image src='/icons/pin.svg' alt='location' width={14} height={14}/>
-                <p>{location}</p>
-            </div>
-            <p className='title'>{title}</p>
-            <div className='datetime'>
-                <div>
-
-                    <Image src='/icons/calendar.svg' alt='date' width={14} height={14}/>
-                    <p>{date}</p>
+            <div className="p-4 space-y-2">
+                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                    <Image src="/icons/pin.svg" alt="location" width={14} height={14} />
+                    <p>{location}</p>
                 </div>
-                <div>
 
-                    <Image src='/icons/clock.svg' alt='time' width={14} height={14}/>
-                    <p>{time}</p>
+                <p className="title text-xl font-semibold text-white">{title}</p>
+
+                <div className="datetime flex items-center justify-between text-gray-300 text-sm mt-2">
+                    <div className="flex items-center gap-1">
+                        <Image src="/icons/calendar.svg" alt="date" width={14} height={14} />
+                        <p>{date}</p>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                        <Image src="/icons/clock.svg" alt="time" width={14} height={14} />
+                        <p>{time}</p>
+                    </div>
                 </div>
             </div>
-
-
         </Link>
-    )
-}
-export default EventCard
+    );
+};
+
+export default EventCard;

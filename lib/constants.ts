@@ -1,3 +1,6 @@
+// ==========================
+// Тип для статических ивентов
+// ==========================
 export type EventItem = {
   image: string;
   title: string;
@@ -7,6 +10,9 @@ export type EventItem = {
   time: string; // e.g., "09:00 AM"
 };
 
+// ==========================
+// Статический список ивентов
+// ==========================
 export const events: EventItem[] = [
   {
     image: "/images/event1.png",
@@ -56,7 +62,6 @@ export const events: EventItem[] = [
     date: "2026-07-10",
     time: "10:00 AM",
   },
-
 ];
 
 export default events;
