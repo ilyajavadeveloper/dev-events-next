@@ -5,10 +5,9 @@ import { createBooking } from "@/lib/actions/booking.actions";
 
 interface BookEventProps {
     eventId: string;
-    slug: string;
 }
 
-const BookEvent = ({ eventId, slug }: BookEventProps) => {
+const BookEvent = ({ eventId }: BookEventProps) => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
 
@@ -25,7 +24,7 @@ const BookEvent = ({ eventId, slug }: BookEventProps) => {
         setLoading(false);
 
         if (res.success) {
-            alert(`You booked event "${slug}" successfully!`);
+            alert("You successfully booked this event!");
         } else {
             alert("Booking failed.");
         }
@@ -36,14 +35,14 @@ const BookEvent = ({ eventId, slug }: BookEventProps) => {
             <input
                 type="email"
                 placeholder="Enter your email"
-                className="input"
+                className="input bg-dark-200 rounded-[6px] px-5 py-2.5"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
             />
 
             <button
                 onClick={handleBooking}
-                className="btn-primary"
+                className="btn-primary bg-primary hover:bg-primary/90 w-full rounded-[6px] px-4 py-2.5 text-lg font-semibold text-black cursor-pointer"
                 disabled={loading}
             >
                 {loading ? "Booking..." : "Book Now"}

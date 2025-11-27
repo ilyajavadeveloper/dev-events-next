@@ -1,27 +1,30 @@
 import React from "react";
-import { notFound } from "next/navigation";
-import { IEvent } from "@/database";
-import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import Image from "next/image";
-import BookEvent from "@/components/BookEvent";
 import EventCard from "@/components/EventCard";
+import BookEvent from "@/components/BookEvent";
+import { getSimilarEventsById } from "@/lib/actions/event.actions";
+import { IEvent } from "@/database";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-
-// === SUB COMPONENTS ===
-
-const EventDetailItem = ({ icon, alt, label }: { icon: string; alt: string; label: string }) => (
+const EventDetailItem = ({
+                             icon,
+                             alt,
+                             label,
+                         }: {
+    icon: string;
+    alt: string;
+    label: string;
+}) => (
     <div className="flex-row-gap-2 items-center">
         <Image src={icon} alt={alt} width={17} height={17} />
         <p>{label}</p>
     </div>
 );
 
-const EventAgenda = ({ agendaItems }: { agendaItems: string[] }) => (
+const EventAgenda = ({ items }: { items: string[] }) => (
     <div className="agenda">
         <h2>Agenda</h2>
         <ul>
-            {agendaItems.map((item) => (
+            {items.map((item) => (
                 <li key={item}>{item}</li>
             ))}
         </ul>
@@ -31,60 +34,42 @@ const EventAgenda = ({ agendaItems }: { agendaItems: string[] }) => (
 const EventTags = ({ tags }: { tags: string[] }) => (
     <div className="flex flex-row gap-1.5 flex-wrap">
         {tags.map((tag) => (
-            <div className="pill" key={tag}>{tag}</div>
+            <div key={tag} className="pill">
+                {tag}
+            </div>
         ))}
     </div>
 );
 
-// === MAIN COMPONENT — FIXED ===
-
-const EventDetails = async ({ slug }: { slug: string }) => {
-    let event: IEvent;
-
-    try {
-        const request = await fetch(`${BASE_URL}/api/events/${slug}`, {
-            next: { revalidate: 60 },
-        });
-
-        if (!request.ok) {
-            if (request.status === 404) return notFound();
-            throw new Error("Failed to fetch event");
-        }
-
-        const response = await request.json();
-        event = response.event;
-
-        if (!event) return notFound();
-    } catch (err) {
-        console.error("Error fetching event:", err);
-        return notFound();
-    }
+const EventDetails = async ({ event }: { event: IEvent }) => {
+    // === similar events by ID ===
+    const similarEvents = await getSimilarEventsById(event._id.toString());
 
     const {
-        description,
         image,
+        description,
         overview,
         date,
         time,
         location,
         mode,
-        agenda,
         audience,
-        tags,
+        agenda,
         organizer,
     } = event;
 
+    // позже можно подключить реальное количество бронирований
     const bookings = 10;
-
-    const similarEvents = await getSimilarEventsBySlug(slug);
 
     return (
         <section id="event">
+            {/* ========= HEADER ========= */}
             <div className="header">
                 <h1>Event Description</h1>
                 <p>{description}</p>
             </div>
 
+            {/* ========= DETAILS ========= */}
             <div className="details">
                 <div className="content">
                     <Image
@@ -95,11 +80,13 @@ const EventDetails = async ({ slug }: { slug: string }) => {
                         className="banner"
                     />
 
+                    {/* Overview */}
                     <section className="flex-col-gap-2">
                         <h2>Overview</h2>
                         <p>{overview}</p>
                     </section>
 
+                    {/* Event Details */}
                     <section className="flex-col-gap-2">
                         <h2>Event Details</h2>
 
@@ -110,16 +97,20 @@ const EventDetails = async ({ slug }: { slug: string }) => {
                         <EventDetailItem icon="/icons/audience.svg" alt="audience" label={audience} />
                     </section>
 
-                    <EventAgenda agendaItems={agenda} />
+                    {/* Agenda */}
+                    <EventAgenda items={agenda} />
 
+                    {/* Organizer */}
                     <section className="flex-col-gap-2">
                         <h2>About the Organizer</h2>
                         <p>{organizer}</p>
                     </section>
 
-                    <EventTags tags={tags} />
+                    {/* Tags */}
+                    <EventTags tags={event.tags} />
                 </div>
 
+                {/* ========= BOOKING ========= */}
                 <aside className="booking">
                     <div className="signup-card">
                         <h2>Book Your Spot</h2>
@@ -130,16 +121,18 @@ const EventDetails = async ({ slug }: { slug: string }) => {
                                 : "Be the first to book your spot!"}
                         </p>
 
-                        <BookEvent eventId={event._id.toString()} slug={event.slug} />
+                        <BookEvent eventId={event._id.toString()} />
                     </div>
                 </aside>
             </div>
 
+            {/* ========= SIMILAR ========= */}
             <div className="flex w-full flex-col gap-4 pt-20">
                 <h2>Similar Events</h2>
+
                 <div className="events">
-                    {similarEvents.map((similar) => (
-                        <EventCard key={similar.slug} {...similar} />
+                    {similarEvents.map((item) => (
+                        <EventCard key={item._id.toString()} {...item} />
                     ))}
                 </div>
             </div>
