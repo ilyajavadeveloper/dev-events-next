@@ -1,8 +1,26 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // ---------- NEXT/IMAGE REMOTE LOAD FIX ----------
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
+  },
 
-const nextConfig: NextConfig = {
-  /* config options here */
+  // ---------- DEV ORIGIN FIX (Next.js 16 warning) ----------
+  experimental: {
+    allowedDevOrigins: ["10.0.6.0/24", "localhost"],
+    serverSourceMaps: false, // убирает Invalid source map error
+    turbo: {
+      // fix windows turbopack runtime chunk bug
+      resolveExtensions: [".js", ".ts", ".tsx"],
+    },
+  },
 
+  // ---------- POSTHOG REWRITES ----------
   async rewrites() {
     return [
       {
@@ -16,8 +34,7 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
 };
 
-export default nextConfig;
+module.exports = nextConfig;

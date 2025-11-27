@@ -3,19 +3,36 @@
 import Event from "@/database/event.model";
 import connectDB from "@/lib/mongodb";
 import { revalidatePath } from "next/cache";
-import type { IEvent } from "@/database";
+import { Types } from "mongoose";
 
 // ============================================================
-// GET EVENT BY ID (нужно для страницы редактирования)
+// ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ЧИСТКИ MONGOOSE-DOC
 // ============================================================
 
-export async function getEventById(id: string): Promise<IEvent | null> {
+function toPlain(event: any) {
+    if (!event) return null;
+
+    return {
+        ...event,
+        _id: event._id.toString(),
+        createdAt: event.createdAt ? event.createdAt.toString() : "",
+        updatedAt: event.updatedAt ? event.updatedAt.toString() : "",
+    };
+}
+
+// ============================================================
+// GET EVENT BY ID (для /events/[id]/edit и /events/[id])
+// ============================================================
+
+export async function getEventById(id: string) {
     try {
         await connectDB();
 
-        const event = await Event.findById(id).lean<IEvent>();
+        if (!Types.ObjectId.isValid(id)) return null;
 
-        return event || null;
+        const event = await Event.findById(id).lean();
+
+        return toPlain(event);
     } catch (e) {
         console.error("getEventById error:", e);
         return null;
@@ -23,25 +40,30 @@ export async function getEventById(id: string): Promise<IEvent | null> {
 }
 
 // ============================================================
-// GET SIMILAR EVENTS BY ID (вместо slug)
+// GET SIMILAR EVENTS BY ID
 // ============================================================
 
-export async function getSimilarEventsById(id: string): Promise<IEvent[]> {
+export async function getSimilarEventsById(id: string) {
     try {
         await connectDB();
 
-        const current = await Event.findById(id).lean<IEvent>();
+        if (!Types.ObjectId.isValid(id)) return [];
+
+        const current = await Event.findById(id).lean();
 
         if (!current) return [];
 
-        const similar = await Event.find({
-            _id: { $ne: current._id },
-            tags: { $in: current.tags },
-        }).lean<IEvent[]>();
+        const tagList = Array.isArray(current.tags) ? current.tags : [];
 
-        return similar;
+
+        const similar = await Event.find({
+            _id: { $ne: new Types.ObjectId(current._id) },
+            tags: { $in: tagList },
+        }).lean();
+
+        return similar.map(toPlain);
     } catch (e) {
-        console.error("similar events error", e);
+        console.error("similar events error:", e);
         return [];
     }
 }
@@ -56,7 +78,7 @@ export async function getAllEvents() {
 
         const events = await Event.find().sort({ createdAt: -1 }).lean();
 
-        return events;
+        return events.map(toPlain);
     } catch (e) {
         console.error("Error fetching events", e);
         return [];
@@ -77,10 +99,14 @@ export async function deleteEvent(id: string) {
 
         return { success: true };
     } catch (err) {
-        console.error("delete event error", err);
+        console.error("delete event error:", err);
         return { success: false };
     }
 }
+
+// ============================================================
+// UPDATE EVENT
+// ============================================================
 
 export async function updateEvent(id: string, data: any) {
     try {
@@ -96,7 +122,7 @@ export async function updateEvent(id: string, data: any) {
 
         return { success: true };
     } catch (err) {
-        console.error("update event error", err);
+        console.error("update event error:", err);
         return { success: false };
     }
 }

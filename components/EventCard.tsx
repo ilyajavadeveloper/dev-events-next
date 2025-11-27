@@ -5,16 +5,21 @@ import Image from "next/image";
 export interface EventCardProps {
     title: string;
     image: string;
-    slug: string;
     location: string;
     date: string;
     time: string;
+
+    // поддерживаем оба варианта
+    id?: string;
+    _id?: string;
 }
 
-const EventCard = ({ title, image, slug, time, location, date }: EventCardProps) => {
+const EventCard = ({ title, image, time, location, date, id, _id }: EventCardProps) => {
+    const eventId = id || _id?.toString();
+
     return (
         <Link
-            href={`/events/${slug}`}
+            href={`/events/${eventId}`}
             id="event-card"
             className="block rounded-xl overflow-hidden bg-[#121212] hover:bg-[#1A1A1A] transition-all shadow-lg hover:shadow-xl"
         >

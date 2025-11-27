@@ -1,20 +1,42 @@
-import React from "react";
-import connectDB from "@/lib/mongodb";
-import Event from "@/database/event.model";
-import { notFound } from "next/navigation";
-import EventDetails from "@/components/EventDetails";
-import type { IEvent } from "@/database";
+import { getEventById } from "@/lib/actions/event.actions";
+import EventForm from "@/components/EventForm";
+import { IEvent } from "@/database";
 
-export default async function EventDetailsPage({ params }: { params: { slug: string } }) {
-    await connectDB();
+interface PageProps {
+    params: Promise<{ id: string }>;
+}
 
-    const event = await Event.findOne({ slug: params.slug }).lean();
+export default async function EditEventPage({ params }: PageProps) {
+    const { id } = await params;
 
-    if (!event) return notFound();
+    console.log("EDIT PARAM ID =", id);
+
+    const event = await getEventById(id);
+
+    if (!event) {
+        console.log("EVENT NOT FOUND BY ID =", id);
+        return (
+            <div className="p-10">
+                <h1 className="text-3xl font-bold text-red-500">Event not found</h1>
+            </div>
+        );
+    }
+
+    const safeEvent: IEvent & {
+        _id: string;
+        createdAt: string;
+        updatedAt: string;
+    } = {
+        ...event,
+        _id: event._id.toString(),
+        createdAt: String(event.createdAt),
+        updatedAt: String(event.updatedAt),
+    };
 
     return (
-        <main>
-            <EventDetails event={event as unknown as IEvent} />
+        <main className="max-w-3xl mx-auto py-10 px-4">
+            <h1 className="text-3xl font-bold mb-6">Edit Event</h1>
+            <EventForm type="edit" event={safeEvent} />
         </main>
     );
 }

@@ -1,23 +1,25 @@
-import { getEventById } from "@/lib/actions/event.actions";
-import EventForm from "@/components/EventForm";
+import React from "react";
+import connectDB from "@/lib/mongodb";
+import Event from "@/database/event.model";
+import { notFound } from "next/navigation";
+import EventDetails from "@/components/EventDetails";
+import type { IEvent } from "@/database";
 
-export default async function EditEventPage({ params }: any) {
-    const { id } = params;
+export default async function EventDetailsPage({
+                                                   params,
+                                               }: {
+    params: { id: string };
+}) {
+    await connectDB();
 
-    const event = await getEventById(id);
+    // Ищем по ID, а не по slug
+    const event = await Event.findById(params.id).lean();
 
-    if (!event) {
-        return (
-            <div className="p-10 text-red-400 text-xl">
-                Event not found.
-            </div>
-        );
-    }
+    if (!event) return notFound();
 
     return (
-        <section className="max-w-4xl mx-auto py-10">
-            <h1 className="text-3xl font-bold mb-8">Edit Event</h1>
-            <EventForm  type="edit" event={event} />
-        </section>
+        <main>
+            <EventDetails event={event as unknown as IEvent} />
+        </main>
     );
 }

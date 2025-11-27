@@ -42,7 +42,7 @@ const EventTags = ({ tags }: { tags: string[] }) => (
 );
 
 const EventDetails = async ({ event }: { event: IEvent }) => {
-    // === similar events by ID ===
+    // similar events fetch
     const similarEvents = await getSimilarEventsById(event._id.toString());
 
     const {
@@ -58,18 +58,17 @@ const EventDetails = async ({ event }: { event: IEvent }) => {
         organizer,
     } = event;
 
-    // позже можно подключить реальное количество бронирований
     const bookings = 10;
 
     return (
         <section id="event">
-            {/* ========= HEADER ========= */}
+            {/* HEADER */}
             <div className="header">
                 <h1>Event Description</h1>
                 <p>{description}</p>
             </div>
 
-            {/* ========= DETAILS ========= */}
+            {/* DETAILS */}
             <div className="details">
                 <div className="content">
                     <Image
@@ -110,11 +109,10 @@ const EventDetails = async ({ event }: { event: IEvent }) => {
                     <EventTags tags={event.tags} />
                 </div>
 
-                {/* ========= BOOKING ========= */}
+                {/* BOOKING */}
                 <aside className="booking">
                     <div className="signup-card">
                         <h2>Book Your Spot</h2>
-
                         <p className="text-sm">
                             {bookings > 0
                                 ? `Join ${bookings} people who already booked their spot!`
@@ -126,13 +124,21 @@ const EventDetails = async ({ event }: { event: IEvent }) => {
                 </aside>
             </div>
 
-            {/* ========= SIMILAR ========= */}
+            {/* SIMILAR */}
             <div className="flex w-full flex-col gap-4 pt-20">
                 <h2>Similar Events</h2>
 
                 <div className="events">
                     {similarEvents.map((item) => (
-                        <EventCard key={item._id.toString()} {...item} />
+                        <EventCard
+                            key={item._id.toString()}
+                            _id={item._id.toString()}
+                            title={item.title}
+                            image={item.image}
+                            location={item.location}
+                            date={item.date}
+                            time={item.time}
+                        />
                     ))}
                 </div>
             </div>

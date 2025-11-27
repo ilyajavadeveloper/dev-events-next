@@ -6,7 +6,6 @@ import Event from "@/database/event.model";
 const Page = async () => {
     await connectDB();
 
-    // Берём только 6 ивентов для главной
     const events = await Event.find()
         .sort({ createdAt: -1 })
         .limit(6)
@@ -38,11 +37,11 @@ const Page = async () => {
                 ) : (
                     <ul className="events">
                         {events.map((event: any) => (
-                            <li key={event.slug}>
+                            <li key={event._id.toString()}>
                                 <EventCard
+                                    _id={event._id.toString()}
                                     title={event.title}
                                     image={event.image}
-                                    slug={event.slug}
                                     time={event.time}
                                     location={event.location}
                                     date={event.date}
