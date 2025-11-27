@@ -7,7 +7,7 @@ interface PageProps {
 }
 
 export default async function EditEventPage({ params }: PageProps) {
-    const { id } = await params;
+    const { id } = await params; // ← ВАЖНО
 
     console.log("EDIT PARAM ID =", id);
 
@@ -22,15 +22,11 @@ export default async function EditEventPage({ params }: PageProps) {
         );
     }
 
-    const safeEvent: IEvent & {
-        _id: string;
-        createdAt: string;
-        updatedAt: string;
-    } = {
+    const safeEvent = {
         ...event,
         _id: event._id.toString(),
-        createdAt: String(event.createdAt),
-        updatedAt: String(event.updatedAt),
+        createdAt: event.createdAt ? String(event.createdAt) : "",
+        updatedAt: event.updatedAt ? String(event.updatedAt) : "",
     };
 
     return (

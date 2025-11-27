@@ -9,6 +9,11 @@ import type { IEvent } from "@/database";
 // ============================================================
 // ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: ПРИВЕСТИ ДОКУМЕНТ К ЧИСТОМУ ВИДУ
 // ============================================================
+type SafeEvent = Omit<IEvent, "_id" | "createdAt" | "updatedAt"> & {
+    _id: string;
+    createdAt: string;
+    updatedAt: string;
+};
 
 function toPlain(event: any) {
     if (!event) return null;
