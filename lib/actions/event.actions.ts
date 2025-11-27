@@ -4,9 +4,10 @@ import Event from "@/database/event.model";
 import connectDB from "@/lib/mongodb";
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
+import type { IEvent } from "@/database";
 
 // ============================================================
-// ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ЧИСТКИ MONGOOSE-DOC
+// ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: ПРИВЕСТИ ДОКУМЕНТ К ЧИСТОМУ ВИДУ
 // ============================================================
 
 function toPlain(event: any) {
@@ -15,23 +16,22 @@ function toPlain(event: any) {
     return {
         ...event,
         _id: event._id.toString(),
-        createdAt: event.createdAt ? event.createdAt.toString() : "",
-        updatedAt: event.updatedAt ? event.updatedAt.toString() : "",
+        createdAt: event.createdAt?.toString() || "",
+        updatedAt: event.updatedAt?.toString() || "",
     };
 }
 
 // ============================================================
-// GET EVENT BY ID (для /events/[id]/edit и /events/[id])
+// GET EVENT BY ID
 // ============================================================
 
-export async function getEventById(id: string) {
+export async function getEventById(id: string): Promise<IEvent | null> {
     try {
         await connectDB();
 
         if (!Types.ObjectId.isValid(id)) return null;
 
-        const event = await Event.findById(id).lean();
-
+        const event = await Event.findById(id).lean<IEvent>();
         return toPlain(event);
     } catch (e) {
         console.error("getEventById error:", e);
@@ -40,28 +40,26 @@ export async function getEventById(id: string) {
 }
 
 // ============================================================
-// GET SIMILAR EVENTS BY ID
+// GET SIMILAR EVENTS
 // ============================================================
 
-export async function getSimilarEventsById(id: string) {
+export async function getSimilarEventsById(id: string): Promise<IEvent[]> {
     try {
         await connectDB();
 
         if (!Types.ObjectId.isValid(id)) return [];
 
-        const current = await Event.findById(id).lean();
-
+        const current = await Event.findById(id).lean<IEvent>();
         if (!current) return [];
 
         const tagList = Array.isArray(current.tags) ? current.tags : [];
 
-
         const similar = await Event.find({
-            _id: { $ne: new Types.ObjectId(current._id) },
+            _id: { $ne: new Types.ObjectId(current._id as any) },
             tags: { $in: tagList },
-        }).lean();
+        }).lean<IEvent[]>();
 
-        return similar.map(toPlain);
+        return similar.map(toPlain) as IEvent[];
     } catch (e) {
         console.error("similar events error:", e);
         return [];
@@ -72,13 +70,13 @@ export async function getSimilarEventsById(id: string) {
 // GET ALL EVENTS (для /events/manage)
 // ============================================================
 
-export async function getAllEvents() {
+export async function getAllEvents(): Promise<IEvent[]> {
     try {
         await connectDB();
 
-        const events = await Event.find().sort({ createdAt: -1 }).lean();
+        const events = await Event.find().sort({ createdAt: -1 }).lean<IEvent[]>();
 
-        return events.map(toPlain);
+        return events.map(toPlain) as IEvent[];
     } catch (e) {
         console.error("Error fetching events", e);
         return [];
@@ -93,13 +91,15 @@ export async function deleteEvent(id: string) {
     try {
         await connectDB();
 
+        if (!Types.ObjectId.isValid(id)) return { success: false };
+
         await Event.findByIdAndDelete(id);
 
         revalidatePath("/events/manage");
 
         return { success: true };
     } catch (err) {
-        console.error("delete event error:", err);
+        console.error("delete event error", err);
         return { success: false };
     }
 }
@@ -112,6 +112,8 @@ export async function updateEvent(id: string, data: any) {
     try {
         await connectDB();
 
+        if (!Types.ObjectId.isValid(id)) return { success: false };
+
         await Event.findByIdAndUpdate(id, data, {
             new: true,
             runValidators: true,
@@ -122,7 +124,7 @@ export async function updateEvent(id: string, data: any) {
 
         return { success: true };
     } catch (err) {
-        console.error("update event error:", err);
+        console.error("update event error", err);
         return { success: false };
     }
 }

@@ -68,7 +68,7 @@ export default function ManageEvents({ events }: Props) {
                             <div className="flex items-center gap-3">
                                 {/* EDIT */}
                                 <Link
-                                    href={`/events/${id}/edit`}
+                                    href={`/events/${id}`}
                                     className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition"
                                 >
                                     Edit
