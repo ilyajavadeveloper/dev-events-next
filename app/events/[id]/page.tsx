@@ -2,43 +2,37 @@ import connectDB from "@/lib/mongodb";
 import Event from "@/database/event.model";
 import { notFound } from "next/navigation";
 import EventDetails from "@/components/EventDetails";
-import { getSimilarEventsById, SafeEvent } from "@/lib/actions/event.actions";
+import { getSimilarEventsById } from "@/lib/actions/event.actions";
 
 export default async function EventDetailsPage({
                                                    params,
                                                }: {
     params: { id: string };
 }) {
+    // ⛔ Пропускаем /events/edit
+    if (params.id === "edit") return null;
+
     await connectDB();
 
-    const doc = await Event.findById(params.id).lean<any>();
+    const event = await Event.findById(params.id).lean();
 
-    if (!doc) return notFound();
+    if (!event) return notFound();
 
-    const event: SafeEvent = {
-        _id: doc._id.toString(),
-        title: doc.title ?? "",
-        description: doc.description ?? "",
-        overview: doc.overview ?? "",
-        venue: doc.venue ?? "",
-        location: doc.location ?? "",
-        date: doc.date ?? "",
-        time: doc.time ?? "",
-        mode: doc.mode ?? "",
-        audience: doc.audience ?? "",
-        organizer: doc.organizer ?? "",
-        image: doc.image ?? "",
-        tags: Array.isArray(doc.tags) ? doc.tags : [],
-        agenda: Array.isArray(doc.agenda) ? doc.agenda : [],
-        createdAt: doc.createdAt?.toString() ?? "",
-        updatedAt: doc.updatedAt?.toString() ?? "",
+    // 💥 FIX: event as any
+    const e = event as any;
+
+    const safeEvent = {
+        ...e,
+        _id: e._id.toString(),
+        createdAt: e.createdAt?.toString() ?? "",
+        updatedAt: e.updatedAt?.toString() ?? "",
     };
 
-    const similarEvents = await getSimilarEventsById(event._id);
+    const similarEvents = await getSimilarEventsById(safeEvent._id);
 
     return (
         <main>
-            <EventDetails event={event} similarEvents={similarEvents} />
+            <EventDetails event={safeEvent} similarEvents={similarEvents} />
         </main>
     );
 }

@@ -2,53 +2,8 @@ import React from "react";
 import Image from "next/image";
 import EventCard from "@/components/EventCard";
 import BookEvent from "@/components/BookEvent";
-import { SafeEvent } from "@/lib/actions/event.actions"; // ❤️ ВАЖНО
 
-const EventDetailItem = ({
-                             icon,
-                             alt,
-                             label,
-                         }: {
-    icon: string;
-    alt: string;
-    label: string;
-}) => (
-    <div className="flex-row-gap-2 items-center">
-        <Image src={icon} alt={alt} width={17} height={17} />
-        <p>{label}</p>
-    </div>
-);
-
-const EventAgenda = ({ items }: { items: string[] }) => (
-    <div className="agenda">
-        <h2>Agenda</h2>
-        <ul>
-            {items.map((item) => (
-                <li key={item}>{item}</li>
-            ))}
-        </ul>
-    </div>
-);
-
-const EventTags = ({ tags }: { tags: string[] }) => (
-    <div className="flex flex-row gap-1.5 flex-wrap">
-        {tags.map((tag) => (
-            <div key={tag} className="pill">
-                {tag}
-            </div>
-        ))}
-    </div>
-);
-
-export default function EventDetails({
-                                         event,
-                                         similarEvents = [],
-                                     }: {
-    event: SafeEvent;              // ❤️ ПРАВИЛЬНО
-    similarEvents?: SafeEvent[];   // ❤️ ПРАВИЛЬНО
-}) {
-    const safeSimilar = Array.isArray(similarEvents) ? similarEvents : [];
-
+export default function EventDetails({ event, similarEvents = [] }: any) {
     const {
         image,
         description,
@@ -60,9 +15,8 @@ export default function EventDetails({
         audience,
         agenda,
         organizer,
+        tags
     } = event;
-
-    const bookings = 10;
 
     return (
         <section id="event">
@@ -81,53 +35,54 @@ export default function EventDetails({
                         className="banner"
                     />
 
-                    <section className="flex-col-gap-2">
+                    <section>
                         <h2>Overview</h2>
                         <p>{overview}</p>
                     </section>
 
-                    <section className="flex-col-gap-2">
+                    <section>
                         <h2>Event Details</h2>
-                        <EventDetailItem icon="/icons/calendar.svg" alt="calendar" label={date} />
-                        <EventDetailItem icon="/icons/clock.svg" alt="clock" label={time} />
-                        <EventDetailItem icon="/icons/pin.svg" alt="pin" label={location} />
-                        <EventDetailItem icon="/icons/mode.svg" alt="mode" label={mode} />
-                        <EventDetailItem icon="/icons/audience.svg" alt="audience" label={audience} />
+
+                        <p>{date}</p>
+                        <p>{time}</p>
+                        <p>{location}</p>
+                        <p>{mode}</p>
+                        <p>{audience}</p>
                     </section>
 
-                    <EventAgenda items={agenda} />
+                    <section>
+                        <h2>Agenda</h2>
+                        <ul>
+                            {agenda.map((i: string) => (
+                                <li key={i}>{i}</li>
+                            ))}
+                        </ul>
+                    </section>
 
-                    <section className="flex-col-gap-2">
-                        <h2>About the Organizer</h2>
+                    <section>
+                        <h2>Organizer</h2>
                         <p>{organizer}</p>
                     </section>
 
-                    <EventTags tags={event.tags} />
+                    <section>
+                        <h2>Tags</h2>
+                        <div className="flex flex-row gap-2 flex-wrap">
+                            {tags.map((tag: string) => (
+                                <span key={tag} className="pill">{tag}</span>
+                            ))}
+                        </div>
+                    </section>
                 </div>
 
                 <aside className="booking">
-                    <div className="signup-card">
-                        <h2>Book Your Spot</h2>
-                        <p className="text-sm">
-                            {bookings > 0
-                                ? `Join ${bookings} people who already booked their spot!`
-                                : "Be the first to book your spot!"}
-                        </p>
-
-                        <BookEvent eventId={event._id} />
-                    </div>
+                    <BookEvent eventId={event._id} />
                 </aside>
             </div>
 
             <div className="flex w-full flex-col gap-4 pt-20">
                 <h2>Similar Events</h2>
-
                 <div className="events">
-                    {safeSimilar.length === 0 && (
-                        <p className="text-gray-400">No similar events found.</p>
-                    )}
-
-                    {safeSimilar.map((item) => (
+                    {similarEvents.map((item: any) => (
                         <EventCard
                             key={item._id}
                             _id={item._id}
