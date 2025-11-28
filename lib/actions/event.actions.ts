@@ -1,11 +1,11 @@
+"use server";
+
 import Event from "@/database/event.model";
 import connectDB from "@/lib/mongodb";
 import { Types } from "mongoose";
 
-// ----------------------
-// NORMALIZER
-// ----------------------
-function toPlain(doc: any): any {
+// Нормализуем документ
+function toPlain(doc: any) {
     return {
         _id: String(doc._id),
         title: doc.title || "",
@@ -21,61 +21,70 @@ function toPlain(doc: any): any {
         image: doc.image || "",
         tags: Array.isArray(doc.tags) ? doc.tags : [],
         agenda: Array.isArray(doc.agenda) ? doc.agenda : [],
-        createdAt: doc.createdAt ? doc.createdAt.toString() : "",
-        updatedAt: doc.updatedAt ? doc.updatedAt.toString() : "",
+        createdAt: doc.createdAt?.toString() || "",
+        updatedAt: doc.updatedAt?.toString() || "",
     };
 }
 
-// ----------------------
-// GET EVENT BY ID — FIXED
-// ----------------------
 export async function getEventById(id: string): Promise<any> {
     await connectDB();
 
-    let doc = null;
+    if (!Types.ObjectId.isValid(id)) return null;
 
-    // 1) если ID похож на ObjectId
-    if (Types.ObjectId.isValid(id)) {
-        doc = await Event.findById(id).lean();
-    }
-
-    // 2) если не нашли — ищем как строку
-    if (!doc) {
-        doc = await Event.findOne({ _id: id }).lean();
-    }
-
+    const doc = (await Event.findById(id).lean()) as any;
     return doc ? toPlain(doc) : null;
 }
 
-// ----------------------
-// GET ALL EVENTS
-// ----------------------
-export async function getAllEvents(): Promise<any[]> {
-    await connectDB();
-
-    const docs = await Event.find().sort({ createdAt: -1 }).lean();
-    return docs.map(toPlain);
-}
-
-// ----------------------
-// GET SIMILAR
-// ----------------------
 export async function getSimilarEventsById(id: string): Promise<any[]> {
     await connectDB();
+    if (!Types.ObjectId.isValid(id)) return [];
 
-    const current = await getEventById(id);
+    const current = (await Event.findById(id).lean()) as any;
     if (!current) return [];
 
     const tags = Array.isArray(current.tags) ? current.tags : [];
 
-    const docs = await Event.find({
+    const docs = (await Event.find({
         _id: { $ne: current._id },
         tags: { $in: tags },
-    }).lean();
+    }).lean()) as any[];
 
     return docs.map(toPlain);
 }
 
-// ----------------------
-// UPDATE / DELETE / CREATE — можно оставить как есть
-// ----------------------
+export async function getAllEvents(): Promise<any[]> {
+    await connectDB();
+
+    const docs = (await Event.find().sort({ createdAt: -1 }).lean()) as any[];
+    return docs.map(toPlain);
+}
+
+export async function updateEvent(id: string, data: any) {
+    await connectDB();
+
+    if (!Types.ObjectId.isValid(id)) return null;
+
+    await Event.findByIdAndUpdate(
+        id,
+        {
+            ...data,
+            tags: Array.isArray(data.tags)
+                ? data.tags
+                : String(data.tags || "")
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean),
+
+            agenda: Array.isArray(data.agenda)
+                ? data.agenda
+                : String(data.agenda || "")
+                    .split("\n")
+                    .map((t) => t.trim())
+                    .filter(Boolean),
+        },
+        { new: true }
+    );
+
+    const doc = (await Event.findById(id).lean()) as any;
+    return doc ? toPlain(doc) : null;
+}

@@ -1,18 +1,23 @@
 import { getEventById } from "@/lib/actions/event.actions";
 import EventForm from "@/components/EventForm";
-import { Types } from "mongoose";
 
-export default async function EditEventPage({ params }: { params: { id: string } }) {
-    const id = params.id;
+// ⛔ ОБРАТИ ВНИМАНИЕ: params — Promise
+export default async function EditEventPage({
+                                                params,
+                                            }: {
+    params: Promise<{ id: string }>;
+}) {
+    const { id } = await params; // ✅ тут мы его await-им
 
-    // Ловим оба варианта ID
     const event = await getEventById(id);
 
     if (!event) {
-        console.log("❌ EVENT NOT FOUND:", id);
+        console.log("❌ EVENT NOT FOUND (edit):", id);
         return (
             <div className="p-10">
-                <h1 className="text-3xl font-bold text-red-500">Event not found</h1>
+                <h1 className="text-3xl font-bold text-red-500">
+                    Event not found
+                </h1>
             </div>
         );
     }
