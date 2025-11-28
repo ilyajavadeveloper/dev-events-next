@@ -5,18 +5,18 @@ import { updateEvent } from "@/lib/actions/event.actions";
 import { useRouter } from "next/navigation";
 
 interface Props {
-    type: "crezzate" | "edit";
+    type: "create" | "edit";
     event?: any;
 }
 
-const EventForm = ({ type, event }: Props) => {
+export default function EventForm({ type, event }: Props) {
     const router = useRouter();
 
     const [form, setForm] = useState({
         title: event?.title || "",
         description: event?.description || "",
         overview: event?.overview || "",
-        image: event?.image || "",
+        image: event?.image || "", // ← тут либо URL, либо File
         venue: event?.venue || "",
         location: event?.location || "",
         date: event?.date || "",
@@ -30,26 +30,64 @@ const EventForm = ({ type, event }: Props) => {
 
     const [loading, setLoading] = useState(false);
 
-    const updateField = (key: string, value: string) => {
+    const updateField = (key: string, value: any) => {
         setForm((prev) => ({ ...prev, [key]: value }));
     };
 
+    // ==================
+    // SUBMIT HANDLER
+    // ==================
     const handleSubmit = async () => {
         setLoading(true);
 
-        const payload = {
-            ...form,
-            agenda: form.agenda.split("\n").map((s: string) => s.trim()).filter(Boolean),
-            tags: form.tags.split(",").map((s: string) => s.trim()).filter(Boolean),
-        };
+        const fd = new FormData();
+
+        fd.append("title", form.title);
+        fd.append("description", form.description);
+        fd.append("overview", form.overview);
+
+        // image logic
+        if (form.image instanceof File) {
+            fd.append("image", form.image);
+        } else {
+            fd.append("currentImage", form.image);
+        }
+
+        fd.append("venue", form.venue);
+        fd.append("location", form.location);
+        fd.append("date", form.date);
+        fd.append("time", form.time);
+        fd.append("mode", form.mode);
+        fd.append("audience", form.audience);
+        fd.append("organizer", form.organizer);
+
+        fd.append(
+            "agenda",
+            JSON.stringify(
+                form.agenda.split("\n").map((a: string) => a.trim()).filter(Boolean)
+            )
+        );
+
+        fd.append(
+            "tags",
+            JSON.stringify(
+                form.tags.split(",").map((t: string) => t.trim()).filter(Boolean)
+            )
+        );
+
+        let res;
+
         if (type === "edit") {
-            const res = await updateEvent(event._id.toString(), payload);
-            if (!res.success) {
-                alert("Failed to update event");
-            } else {
-                alert("Event updated successfully");
-                router.push(`/events/${event._id.toString()}`);
-            }
+            res = await updateEvent(event._id.toString(), fd);
+        } else {
+            // createEvent если понадобится
+        }
+
+        if (!res?.success) {
+            alert("❌ Failed to save event");
+        } else {
+            alert("✅ Event saved!");
+            router.push(`/events/${event?._id || ""}`);
         }
 
         setLoading(false);
@@ -58,66 +96,76 @@ const EventForm = ({ type, event }: Props) => {
     return (
         <div className="flex flex-col gap-6">
 
+            {/* EVENT TITLE */}
             <input
+                className="input"
                 placeholder="Title"
                 value={form.title}
                 onChange={(e) => updateField("title", e.target.value)}
-                className="input"
             />
 
             <textarea
+                className="input h-24"
                 placeholder="Description"
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
-                className="input h-24"
             />
 
             <textarea
+                className="input h-20"
                 placeholder="Overview"
                 value={form.overview}
                 onChange={(e) => updateField("overview", e.target.value)}
-                className="input h-20"
             />
 
+            {/* IMAGE SECTION */}
+            {type === "edit" && form.image && typeof form.image === "string" && (
+                <img
+                    src={form.image}
+                    alt="Current event image"
+                    className="w-40 h-40 object-cover rounded-xl border mb-2"
+                />
+            )}
+
             <input
-                placeholder="Image URL"
-                value={form.image}
-                onChange={(e) => updateField("image", e.target.value)}
+                type="file"
+                accept="image/*"
+                onChange={(e) => updateField("image", e.target.files?.[0] || null)}
                 className="input"
             />
 
             <input
+                className="input"
                 placeholder="Venue"
                 value={form.venue}
                 onChange={(e) => updateField("venue", e.target.value)}
-                className="input"
             />
 
             <input
+                className="input"
                 placeholder="Location"
                 value={form.location}
                 onChange={(e) => updateField("location", e.target.value)}
-                className="input"
             />
 
             <input
                 type="date"
+                className="input"
                 value={form.date}
                 onChange={(e) => updateField("date", e.target.value)}
-                className="input"
             />
 
             <input
                 type="time"
+                className="input"
                 value={form.time}
                 onChange={(e) => updateField("time", e.target.value)}
-                className="input"
             />
 
             <select
+                className="input"
                 value={form.mode}
                 onChange={(e) => updateField("mode", e.target.value)}
-                className="input"
             >
                 <option value="offline">Offline</option>
                 <option value="online">Online</option>
@@ -125,42 +173,40 @@ const EventForm = ({ type, event }: Props) => {
             </select>
 
             <input
+                className="input"
                 placeholder="Audience"
                 value={form.audience}
                 onChange={(e) => updateField("audience", e.target.value)}
-                className="input"
             />
 
             <textarea
+                className="input h-28"
                 placeholder="Agenda (each item on new line)"
                 value={form.agenda}
                 onChange={(e) => updateField("agenda", e.target.value)}
-                className="input h-28"
             />
 
             <textarea
+                className="input h-20"
                 placeholder="Tags (comma separated)"
                 value={form.tags}
                 onChange={(e) => updateField("tags", e.target.value)}
-                className="input h-20"
             />
 
             <input
+                className="input"
                 placeholder="Organizer"
                 value={form.organizer}
                 onChange={(e) => updateField("organizer", e.target.value)}
-                className="input"
             />
 
             <button
                 onClick={handleSubmit}
-                className="btn-primary"
                 disabled={loading}
+                className="btn-primary"
             >
                 {loading ? "Saving..." : type === "edit" ? "Save Changes" : "Create Event"}
             </button>
         </div>
     );
-};
-
-export default EventForm;
+}

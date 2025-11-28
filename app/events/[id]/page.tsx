@@ -3,7 +3,7 @@ import EventForm from "@/components/EventForm";
 import { IEvent } from "@/database";
 
 interface PageProps {
-    params: Promise<{ id: string }>;
+   params: Promise<{ id: string }>;
 }
 
 export default async function EditEventPage({ params }: PageProps) {
