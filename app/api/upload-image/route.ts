@@ -10,16 +10,14 @@ export async function POST(req: NextRequest) {
             cloudinary.uploader
                 .upload_stream(
                     { folder: "DevEvent", resource_type: "image" },
-                    (err, result) => {
-                        if (err) reject(err);
-                        else resolve(result);
-                    }
+                    (err, result) => (err ? reject(err) : resolve(result))
                 )
                 .end(buffer);
         });
 
         return NextResponse.json({ secure_url: uploaded.secure_url });
     } catch (e) {
+        console.error(e);
         return NextResponse.json({ error: e }, { status: 500 });
     }
 }

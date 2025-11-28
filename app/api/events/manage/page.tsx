@@ -4,6 +4,7 @@ import Link from "next/link";
 
 export default async function ManageEventsPage() {
     await connectDB();
+
     const events = await Event.find().sort({ createdAt: -1 }).lean();
 
     return (
@@ -20,22 +21,35 @@ export default async function ManageEventsPage() {
                         <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                     </thead>
+
                     <tbody>
                     {events.map((event: any) => (
                         <tr key={event._id} className="border-t border-gray-800">
                             <td className="px-4 py-3">{event.title}</td>
-                            <td className="px-4 py-3">{event.date}</td>
-                            <td className="px-4 py-3 capitalize">{event.mode}</td>
-                            <td className="px-4 py-3 text-right space-x-3">
 
+                            <td className="px-4 py-3">
+                                {event.date
+                                    ? new Date(event.date).toLocaleDateString()
+                                    : "—"}
+                            </td>
+
+                            <td className="px-4 py-3 capitalize">
+                                {event.mode}
+                            </td>
+
+                            <td className="px-4 py-3 text-right space-x-3">
                                 <Link
-                                    href={`/events/${event._id}/edit`}
+                                    href={`/events/${event._id.toString()}/edit`}
                                     className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700"
                                 >
                                     Edit
                                 </Link>
 
-                                <form action={`/api/events/${event._id}`} method="POST" className="inline">
+                                <form
+                                    action={`/api/events/${event._id.toString()}`}
+                                    method="POST"
+                                    className="inline"
+                                >
                                     <button
                                         formMethod="DELETE"
                                         className="px-3 py-1 rounded bg-red-600 hover:bg-red-700"
@@ -43,7 +57,6 @@ export default async function ManageEventsPage() {
                                         Delete
                                     </button>
                                 </form>
-
                             </td>
                         </tr>
                     ))}

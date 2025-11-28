@@ -20,9 +20,9 @@ export default async function EditEventPage({ params }: PageProps) {
 
     const safeEvent = {
         ...event,
-        _id: event._id?.toString(),
-        createdAt: event.createdAt ? event.createdAt.toString() : "",
-        updatedAt: event.updatedAt ? event.updatedAt.toString() : "",
+        _id: event._id.toString(),
+        createdAt: event.createdAt?.toString() ?? "",
+        updatedAt: event.updatedAt?.toString() ?? "",
     };
 
     return (
