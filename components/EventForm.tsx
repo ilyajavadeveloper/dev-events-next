@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { updateEvent } from "@/lib/actions/event.actions";
 import { useRouter } from "next/navigation";
 
@@ -9,7 +9,7 @@ interface Props {
     event?: any;
 }
 
-export default function EventForm({ type, event }: Props) {
+const EventForm = ({ type, event }: Props) => {
     const router = useRouter();
 
     const [form, setForm] = useState({
@@ -27,36 +27,34 @@ export default function EventForm({ type, event }: Props) {
         tags: event?.tags?.join(", ") || "",
     });
 
-    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [newImage, setNewImage] = useState<File | null>(null);
 
     const updateField = (key: string, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleImageFile = (e: any) => {
-        if (!e.target.files?.length) return;
-        setImageFile(e.target.files[0]);
+    const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.[0]) return;
+        setNewImage(e.target.files[0]);
     };
 
     const handleSubmit = async () => {
         const payload = {
             ...form,
-            agenda: form.agenda.split("\n").map((s) => s.trim()).filter(Boolean),
-            tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
+            agenda: form.agenda.split("\n").map((s: string) => s.trim()).filter(Boolean),
+            tags: form.tags.split(",").map((s: string) => s.trim()).filter(Boolean),
         };
 
-        if (type === "edit") {
-            const res = await updateEvent(event._id.toString(), {
-                ...payload,
-                imageFile,
-            });
+        const result = await updateEvent(event._id.toString(), {
+            ...payload,
+            newImage, // ⬅ отправляем на сервер
+        });
 
-            if (res.success) {
-                alert("Event updated!");
-                router.push(`/events/${event._id.toString()}`);
-            } else {
-                alert("Update failed");
-            }
+        if (result.success) {
+            router.push(`/events/${event._id.toString()}`);
+            router.refresh();
+        } else {
+            alert("Failed to update event");
         }
     };
 
@@ -74,39 +72,40 @@ export default function EventForm({ type, event }: Props) {
                 placeholder="Description"
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
-                className="input"
+                className="input h-24"
             />
 
             <textarea
                 placeholder="Overview"
                 value={form.overview}
                 onChange={(e) => updateField("overview", e.target.value)}
-                className="input"
+                className="input h-20"
             />
 
-            {/* 🟢 ВОТ ОНО — ТЕПЕРЬ ФАЙЛ */}
+            {/* IMAGE FIELD (NEW) */}
             <div className="flex flex-col gap-2">
                 <p className="font-semibold">Event Image</p>
 
-                {/* показать текущую фотку */}
+                {/* CURRENT IMAGE */}
                 {event?.image && (
                     <img
                         src={event.image}
-                        alt="current"
-                        className="w-40 h-28 rounded object-cover"
+                        alt="Current"
+                        className="w-40 h-28 rounded object-cover border border-gray-700"
                     />
                 )}
 
-                {/* выбор новой фотки */}
+                {/* NEW UPLOAD */}
                 <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageFile}
+                    className="input"
                 />
 
-                <p className="text-sm text-gray-400">
-                    {imageFile ? "New image selected" : "Keep current image"}
-                </p>
+                {newImage && (
+                    <p className="text-green-400 text-sm">New image selected ✔</p>
+                )}
             </div>
 
             <input
@@ -158,14 +157,14 @@ export default function EventForm({ type, event }: Props) {
                 placeholder="Agenda (each item on new line)"
                 value={form.agenda}
                 onChange={(e) => updateField("agenda", e.target.value)}
-                className="input"
+                className="input h-28"
             />
 
             <textarea
                 placeholder="Tags (comma separated)"
                 value={form.tags}
                 onChange={(e) => updateField("tags", e.target.value)}
-                className="input"
+                className="input h-20"
             />
 
             <input
@@ -175,9 +174,14 @@ export default function EventForm({ type, event }: Props) {
                 className="input"
             />
 
-            <button onClick={handleSubmit} className="btn-primary">
+            <button
+                onClick={handleSubmit}
+                className="btn-primary"
+            >
                 Save Changes
             </button>
         </div>
     );
-}
+};
+
+export default EventForm;
