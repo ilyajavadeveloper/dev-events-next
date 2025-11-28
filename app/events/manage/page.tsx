@@ -4,7 +4,18 @@ import ManageEvents from "@/components/ManageEvents";
 
 export default async function ManageEventsPage() {
     await connectDB();
-    const events = await Event.find().sort({ createdAt: -1 }).lean();
+
+    // Забираем из базы
+    const rawEvents = await Event.find().sort({ createdAt: -1 }).lean();
+
+    // Нормализуем под EventItem[]
+    const events = rawEvents.map((ev: any) => ({
+        _id: String(ev._id),
+        title: ev.title ?? "",
+        image: ev.image ?? "",
+        date: ev.date ?? "",
+        time: ev.time ?? "",
+    }));
 
     return (
         <main className="max-w-5xl mx-auto py-10">
