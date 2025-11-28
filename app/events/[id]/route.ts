@@ -10,14 +10,14 @@ export async function PATCH(req: NextRequest, { params }: any) {
         const formData = await req.formData();
         const { id } = params;
 
+        // file
         const file = formData.get("image") as File | null;
-
         let finalImage = formData.get("currentImage") as string;
 
         if (file) {
             const buffer = Buffer.from(await file.arrayBuffer());
 
-            const uploaded: any = await new Promise((resolve, reject) => {
+            const uploaded: any = await new Promise((resolve, reject) =>
                 cloudinary.uploader
                     .upload_stream(
                         { folder: "DevEvent", resource_type: "image" },
@@ -26,12 +26,13 @@ export async function PATCH(req: NextRequest, { params }: any) {
                             else resolve(result);
                         }
                     )
-                    .end(buffer);
-            });
+                    .end(buffer)
+            );
 
             finalImage = uploaded.secure_url;
         }
 
+        // text fields
         const tags = JSON.parse(formData.get("tags") as string);
         const agenda = JSON.parse(formData.get("agenda") as string);
 
