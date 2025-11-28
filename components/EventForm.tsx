@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { updateEvent } from "@/lib/actions/event.actions";
 import { useRouter } from "next/navigation";
 
@@ -9,7 +9,7 @@ interface Props {
     event?: any;
 }
 
-const EventForm = ({ type, event }: Props) => {
+export default function EventForm({ type, event }: Props) {
     const router = useRouter();
 
     const [form, setForm] = useState({
@@ -27,35 +27,58 @@ const EventForm = ({ type, event }: Props) => {
         tags: event?.tags?.join(", ") || "",
     });
 
-    const [newImage, setNewImage] = useState<File | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [loading, setLoading] = useState(false);
 
     const updateField = (key: string, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files?.[0]) return;
-        setNewImage(e.target.files[0]);
+    const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setImageFile(e.target.files[0]);
+        }
     };
 
     const handleSubmit = async () => {
+        setLoading(true);
+
+        let finalImage = event?.image || "";
+
+        // Если картинку меняют — загружаем новую
+        if (imageFile) {
+            const buffer = await imageFile.arrayBuffer();
+            const bytes = new Uint8Array(buffer);
+
+            const uploadRes = await fetch("/api/upload-image", {
+                method: "POST",
+                body: bytes,
+                headers: { "Content-Type": "application/octet-stream" },
+            });
+
+            const json = await uploadRes.json();
+            if (json.secure_url) finalImage = json.secure_url;
+        }
+
         const payload = {
             ...form,
+            image: finalImage,
             agenda: form.agenda.split("\n").map((s: string) => s.trim()).filter(Boolean),
             tags: form.tags.split(",").map((s: string) => s.trim()).filter(Boolean),
         };
 
-        const result = await updateEvent(event._id.toString(), {
-            ...payload,
-            newImage, // ⬅ отправляем на сервер
-        });
+        if (type === "edit") {
+            const res = await updateEvent(event._id.toString(), payload);
 
-        if (result.success) {
-            router.push(`/events/${event._id.toString()}`);
-            router.refresh();
-        } else {
-            alert("Failed to update event");
+            if (!res.success) {
+                alert("Failed to update event");
+            } else {
+                alert("Event updated successfully");
+                router.push(`/events/${event._id.toString()}`);
+            }
         }
+
+        setLoading(false);
     };
 
     return (
@@ -82,29 +105,23 @@ const EventForm = ({ type, event }: Props) => {
                 className="input h-20"
             />
 
-            {/* IMAGE FIELD (NEW) */}
+            {/* ИЗОБРАЖЕНИЕ */}
             <div className="flex flex-col gap-2">
                 <p className="font-semibold">Event Image</p>
 
-                {/* CURRENT IMAGE */}
                 {event?.image && (
                     <img
                         src={event.image}
                         alt="Current"
-                        className="w-40 h-28 rounded object-cover border border-gray-700"
+                        className="w-40 h-28 object-cover rounded-md"
                     />
                 )}
 
-                {/* NEW UPLOAD */}
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFile}
-                    className="input"
-                />
-
-                {newImage && (
-                    <p className="text-green-400 text-sm">New image selected ✔</p>
+                <input type="file" accept="image/*" onChange={handleImage} />
+                {!imageFile && (
+                    <p className="text-gray-400 text-sm">
+                        Current image will stay unless you upload a new one
+                    </p>
                 )}
             </div>
 
@@ -177,11 +194,10 @@ const EventForm = ({ type, event }: Props) => {
             <button
                 onClick={handleSubmit}
                 className="btn-primary"
+                disabled={loading}
             >
-                Save Changes
+                {loading ? "Saving..." : type === "edit" ? "Save Changes" : "Create Event"}
             </button>
         </div>
     );
-};
-
-export default EventForm;
+}
