@@ -24,7 +24,7 @@ export default async function ManageEventsPage() {
 
                     <tbody>
                     {events.map((event: any) => (
-                        <tr key={event._id} className="border-t border-gray-800">
+                        <tr key={String(event._id)} className="border-t border-gray-800">
                             <td className="px-4 py-3">{event.title}</td>
 
                             <td className="px-4 py-3">
@@ -37,14 +37,14 @@ export default async function ManageEventsPage() {
 
                             <td className="px-4 py-3 text-right space-x-3">
                                 <Link
-                                    href={`/events/${event._id.toString()}/edit`}
+                                    href={`/events/${String(event._id)}/edit`}
                                     className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700"
                                 >
                                     Edit
                                 </Link>
 
                                 <form
-                                    action={`/api/events/${event._id.toString()}`}
+                                    action={`/api/events/${String(event._id)}`}
                                     method="POST"
                                     className="inline"
                                 >

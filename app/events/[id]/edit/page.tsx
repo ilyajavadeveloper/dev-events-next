@@ -8,9 +8,10 @@ interface PageProps {
 export default async function EditEventPage({ params }: PageProps) {
     const { id } = params;
 
-    const event: any = await getEventById(id);
+    const event = await getEventById(id); // уже SafeEvent
 
     if (!event) {
+        console.log("EVENT NOT FOUND:", id);
         return (
             <div className="p-10">
                 <h1 className="text-3xl font-bold text-red-500">Event not found</h1>
@@ -18,17 +19,10 @@ export default async function EditEventPage({ params }: PageProps) {
         );
     }
 
-    const safeEvent = {
-        ...event,
-        _id: event._id.toString(),
-        createdAt: event.createdAt?.toString() ?? "",
-        updatedAt: event.updatedAt?.toString() ?? "",
-    };
-
     return (
         <main className="max-w-3xl mx-auto py-10 px-4">
             <h1 className="text-3xl font-bold mb-6">Edit Event</h1>
-            <EventForm type="edit" event={safeEvent} />
+            <EventForm type="edit" event={event} />
         </main>
     );
 }
