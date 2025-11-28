@@ -8,7 +8,7 @@ interface PageProps {
 export default async function EditEventPage({ params }: PageProps) {
     const { id } = params;
 
-    const event = await getEventById(id);
+    const event: any = await getEventById(id);
 
     if (!event) {
         return (
@@ -18,14 +18,13 @@ export default async function EditEventPage({ params }: PageProps) {
         );
     }
 
-    // === FIX ===
-    // Создаём новый объект, НЕ трогая оригинальный IEvent
+    // ⬇️ ОЧЕНЬ ВАЖНО — НЕ ТРОГАЕМ ТИП IEvent, просто делаем копию
     const safeEvent = {
-        ...event.toObject?.() ?? { ...event },
-        _id: event._id.toString(),
+        ...event,
+        _id: event._id?.toString(),
         createdAt: event.createdAt ? event.createdAt.toString() : "",
         updatedAt: event.updatedAt ? event.updatedAt.toString() : "",
-    } as any; // ← Разрешаем кастомный тип
+    };
 
     return (
         <main className="max-w-3xl mx-auto py-10 px-4">
