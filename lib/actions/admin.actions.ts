@@ -16,5 +16,5 @@ export async function loginAdmin(password: string) {
         maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
-    return { success: true };
+    return z{ success: true };
 }

@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         const body = await req.json();
+
         const { eventId, email } = body;
 
         if (!eventId || !email) {
@@ -19,10 +20,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const booking = await Booking.create({
-            eventId,
-            email,
-        });
+        const booking = await Booking.create({ eventId, email });
 
         return NextResponse.json(
             { success: true, booking },
@@ -31,7 +29,7 @@ export async function POST(req: NextRequest) {
     } catch (e: any) {
         console.error("BOOKING ERROR:", e);
         return NextResponse.json(
-            { success: false, error: e.message ?? "Unknown error" },
+            { success: false, error: e.message || "Unknown error" },
             { status: 500 }
         );
     }
@@ -44,7 +42,7 @@ export async function GET() {
     try {
         await connectDB();
 
-        const bookings = await Booking.find().sort({ createdAt: -1 }).lean();
+        const bookings = await Booking.find().sort({ createdAt: -1 });
 
         return NextResponse.json(
             { success: true, bookings },

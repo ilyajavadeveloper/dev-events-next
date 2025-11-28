@@ -2,14 +2,49 @@ import React from "react";
 import Image from "next/image";
 import EventCard from "@/components/EventCard";
 import BookEvent from "@/components/BookEvent";
+import { getSimilarEventsById } from "@/lib/actions/event.actions";
+import { IEvent } from "@/database";
 
-export default function EventDetails({
-                                         event,
-                                         similarEvents = [],
-                                     }: {
-    event: any;
-    similarEvents: any[];
-}) {
+const EventDetailItem = ({
+                             icon,
+                             alt,
+                             label,
+                         }: {
+    icon: string;
+    alt: string;
+    label: string;
+}) => (
+    <div className="flex-row-gap-2 items-center">
+        <Image src={icon} alt={alt} width={17} height={17} />
+        <p>{label}</p>
+    </div>
+);
+
+const EventAgenda = ({ items }: { items: string[] }) => (
+    <div className="agenda">
+        <h2>Agenda</h2>
+        <ul>
+            {items.map((item) => (
+                <li key={item}>{item}</li>
+            ))}
+        </ul>
+    </div>
+);
+
+const EventTags = ({ tags }: { tags: string[] }) => (
+    <div className="flex flex-row gap-1.5 flex-wrap">
+        {tags.map((tag) => (
+            <div key={tag} className="pill">
+                {tag}
+            </div>
+        ))}
+    </div>
+);
+
+const EventDetails = async ({ event }: { event: IEvent }) => {
+    // similar events fetch
+    const similarEvents = await getSimilarEventsById(event._id.toString());
+
     const {
         image,
         description,
@@ -21,16 +56,19 @@ export default function EventDetails({
         audience,
         agenda,
         organizer,
-        tags,
     } = event;
+
+    const bookings = 10;
 
     return (
         <section id="event">
+            {/* HEADER */}
             <div className="header">
                 <h1>Event Description</h1>
                 <p>{description}</p>
             </div>
 
+            {/* DETAILS */}
             <div className="details">
                 <div className="content">
                     <Image
@@ -41,58 +79,60 @@ export default function EventDetails({
                         className="banner"
                     />
 
-                    <section>
+                    {/* Overview */}
+                    <section className="flex-col-gap-2">
                         <h2>Overview</h2>
                         <p>{overview}</p>
                     </section>
 
-                    <section>
+                    {/* Event Details */}
+                    <section className="flex-col-gap-2">
                         <h2>Event Details</h2>
-                        <p>{date}</p>
-                        <p>{time}</p>
-                        <p>{location}</p>
-                        <p>{mode}</p>
-                        <p>{audience}</p>
+
+                        <EventDetailItem icon="/icons/calendar.svg" alt="calendar" label={date} />
+                        <EventDetailItem icon="/icons/clock.svg" alt="clock" label={time} />
+                        <EventDetailItem icon="/icons/pin.svg" alt="pin" label={location} />
+                        <EventDetailItem icon="/icons/mode.svg" alt="mode" label={mode} />
+                        <EventDetailItem icon="/icons/audience.svg" alt="audience" label={audience} />
                     </section>
 
-                    <section>
-                        <h2>Agenda</h2>
-                        <ul>
-                            {agenda.map((i: string, idx: number) => (
-                                <li key={idx}>{i}</li>
-                            ))}
-                        </ul>
-                    </section>
+                    {/* Agenda */}
+                    <EventAgenda items={agenda} />
 
-                    <section>
-                        <h2>Organizer</h2>
+                    {/* Organizer */}
+                    <section className="flex-col-gap-2">
+                        <h2>About the Organizer</h2>
                         <p>{organizer}</p>
                     </section>
 
-                    <section>
-                        <h2>Tags</h2>
-                        <div className="flex flex-row gap-2 flex-wrap">
-                            {tags.map((tag: string, idx: number) => (
-                                <span key={idx} className="pill">
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    </section>
+                    {/* Tags */}
+                    <EventTags tags={event.tags} />
                 </div>
 
+                {/* BOOKING */}
                 <aside className="booking">
-                    <BookEvent eventId={event._id} />
+                    <div className="signup-card">
+                        <h2>Book Your Spot</h2>
+                        <p className="text-sm">
+                            {bookings > 0
+                                ? `Join ${bookings} people who already booked their spot!`
+                                : "Be the first to book your spot!"}
+                        </p>
+
+                        <BookEvent eventId={event._id.toString()} />
+                    </div>
                 </aside>
             </div>
 
+            {/* SIMILAR */}
             <div className="flex w-full flex-col gap-4 pt-20">
                 <h2>Similar Events</h2>
+
                 <div className="events">
-                    {similarEvents.map((item: any) => (
+                    {similarEvents.map((item) => (
                         <EventCard
-                            key={item._id}
-                            _id={item._id}
+                            key={item._id.toString()}
+                            _id={item._id.toString()}
                             title={item.title}
                             image={item.image}
                             location={item.location}
@@ -104,4 +144,6 @@ export default function EventDetails({
             </div>
         </section>
     );
-}
+};
+
+export default EventDetails;

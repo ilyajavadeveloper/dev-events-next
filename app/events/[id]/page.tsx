@@ -1,33 +1,38 @@
-import connectDB from "@/lib/mongodb";
-import Event from "@/database/event.model";
-import { notFound } from "next/navigation";
-import EventDetails from "@/components/EventDetails";
-import { getSimilarEventsById } from "@/lib/actions/event.actions";
+import { getEventById } from "@/lib/actions/event.actions";
+import EventForm from "@/components/EventForm";
+import { IEvent } from "@/database";
 
-export default async function EventDetailsPage({
-                                                   params,
-                                               }: {
+interface PageProps {
     params: Promise<{ id: string }>;
-}) {
-    const { id } = await params; // ✅ await params
+}
 
-    await connectDB();
+export default async function EditEventPage({ params }: PageProps) {
+    const { id } = await params; // ← ВАЖНО
 
-    const doc = (await Event.findById(id).lean()) as any;
-    if (!doc) return notFound();
+    console.log("EDIT PARAM ID =", id);
+
+    const event = await getEventById(id);
+
+    if (!event) {
+        console.log("EVENT NOT FOUND BY ID =", id);
+        return (
+            <div className="p-10">
+                <h1 className="text-3xl font-bold text-red-500">Event not found</h1>
+            </div>
+        );
+    }
 
     const safeEvent = {
-        ...doc,
-        _id: String(doc._id),
-        createdAt: doc.createdAt?.toString() ?? "",
-        updatedAt: doc.updatedAt?.toString() ?? "",
+        ...event,
+        _id: event._id.toString(),
+        createdAt: event.createdAt ? String(event.createdAt) : "",
+        updatedAt: event.updatedAt ? String(event.updatedAt) : "",
     };
 
-    const similarEvents = await getSimilarEventsById(safeEvent._id);
-
     return (
-        <main>
-            <EventDetails event={safeEvent} similarEvents={similarEvents} />
+        <main className="max-w-3xl mx-auto py-10 px-4">
+            <h1 className="text-3xl font-bold mb-6">Edit Event</h1>
+            <EventForm type="edit" event={safeEvent} />
         </main>
     );
 }

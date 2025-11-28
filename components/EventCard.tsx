@@ -8,19 +8,13 @@ export interface EventCardProps {
     location: string;
     date: string;
     time: string;
+
+    // поддерживаем оба варианта
     id?: string;
     _id?: string;
 }
 
-const EventCard = ({
-                       title,
-                       image,
-                       time,
-                       location,
-                       date,
-                       id,
-                       _id,
-                   }: EventCardProps) => {
+const EventCard = ({ title, image, time, location, date, id, _id }: EventCardProps) => {
     const eventId = id || _id?.toString();
 
     return (

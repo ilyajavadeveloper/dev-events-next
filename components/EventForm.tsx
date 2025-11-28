@@ -1,20 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { updateEvent } from "@/lib/actions/event.actions";
 import { useRouter } from "next/navigation";
 
 interface Props {
-    type: "create" | "edit";
+    type: "crezzate" | "edit";
     event?: any;
 }
 
-export default function EventForm({ type, event }: Props) {
+const EventForm = ({ type, event }: Props) => {
     const router = useRouter();
 
     const [form, setForm] = useState({
         title: event?.title || "",
         description: event?.description || "",
         overview: event?.overview || "",
+        image: event?.image || "",
         venue: event?.venue || "",
         location: event?.location || "",
         date: event?.date || "",
@@ -26,59 +28,28 @@ export default function EventForm({ type, event }: Props) {
         tags: event?.tags?.join(", ") || "",
     });
 
-    const [imageFile, setImageFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
 
     const updateField = (key: string, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            setImageFile(e.target.files[0]);
-        }
-    };
-
     const handleSubmit = async () => {
         setLoading(true);
 
-        const formData = new FormData();
-
-        formData.append("title", form.title);
-        formData.append("description", form.description);
-        formData.append("overview", form.overview);
-        formData.append("venue", form.venue);
-        formData.append("location", form.location);
-        formData.append("date", form.date);
-        formData.append("time", form.time);
-        formData.append("mode", form.mode);
-        formData.append("audience", form.audience);
-        formData.append("organizer", form.organizer);
-
-        formData.append(
-            "agenda",
-            JSON.stringify(form.agenda.split("\n").map((s: string) => s.trim()).filter(Boolean))
-        );
-
-        formData.append(
-            "tags",
-            JSON.stringify(form.tags.split(",").map((s: string) => s.trim()).filter(Boolean))
-        );
-
-        formData.append("currentImage", event?.image || "");
-
-        if (imageFile) formData.append("image", imageFile);
-
-        const res = await fetch(`/api/events/${event._id}`, {
-            method: "PATCH",
-            body: formData,
-        });
-
-        if (!res.ok) {
-            alert("Failed to update event");
-        } else {
-            alert("Event updated successfully");
-            router.push(`/events/${event._id}`);
+        const payload = {
+            ...form,
+            agenda: form.agenda.split("\n").map((s: string) => s.trim()).filter(Boolean),
+            tags: form.tags.split(",").map((s: string) => s.trim()).filter(Boolean),
+        };
+        if (type === "edit") {
+            const res = await updateEvent(event._id.toString(), payload);
+            if (!res.success) {
+                alert("Failed to update event");
+            } else {
+                alert("Event updated successfully");
+                router.push(`/events/${event._id.toString()}`);
+            }
         }
 
         setLoading(false);
@@ -108,19 +79,12 @@ export default function EventForm({ type, event }: Props) {
                 className="input h-20"
             />
 
-            <div className="flex flex-col gap-2">
-                <p className="font-semibold">Event Image</p>
-
-                {event?.image && (
-                    <img
-                        src={event.image}
-                        alt="Current"
-                        className="w-40 h-28 object-cover rounded-md"
-                    />
-                )}
-
-                <input type="file" accept="image/*" onChange={handleImage} />
-            </div>
+            <input
+                placeholder="Image URL"
+                value={form.image}
+                onChange={(e) => updateField("image", e.target.value)}
+                className="input"
+            />
 
             <input
                 placeholder="Venue"
@@ -168,7 +132,7 @@ export default function EventForm({ type, event }: Props) {
             />
 
             <textarea
-                placeholder="Agenda (each line = one item)"
+                placeholder="Agenda (each item on new line)"
                 value={form.agenda}
                 onChange={(e) => updateField("agenda", e.target.value)}
                 className="input h-28"
@@ -197,4 +161,6 @@ export default function EventForm({ type, event }: Props) {
             </button>
         </div>
     );
-}
+};
+
+export default EventForm;

@@ -10,7 +10,7 @@ export interface IEvent extends Document {
     location: string;
     date: string;
     time: string;
-    mode: "online" | "offline" | "hybrid";
+    mode: string;
     audience: string;
     agenda: string[];
     organizer: string;
@@ -48,7 +48,10 @@ const EventSchema = new Schema<IEvent>(
         agenda: {
             type: [String],
             required: true,
-            validate: (v: string[]) => v.length > 0,
+            validate: {
+                validator: (v: string[]) => v.length > 0,
+                message: "At least one agenda item is required",
+            },
         },
 
         organizer: { type: String, required: true, trim: true },
@@ -56,21 +59,14 @@ const EventSchema = new Schema<IEvent>(
         tags: {
             type: [String],
             required: true,
-            validate: (v: string[]) => v.length > 0,
+            validate: {
+                validator: (v: string[]) => v.length > 0,
+                message: "At least one tag is required",
+            },
         },
     },
     { timestamps: true }
 );
-
-// Автоматическая конвертация ObjectId → string
-EventSchema.set("toJSON", {
-    virtuals: true,
-    versionKey: false,
-    transform: (_: any, ret: any) => {
-        ret._id = ret._id.toString();
-        return ret;
-    },
-});
 
 const Event = models.Event || model<IEvent>("Event", EventSchema);
 export default Event;

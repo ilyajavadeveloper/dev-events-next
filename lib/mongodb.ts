@@ -34,7 +34,7 @@ async function connectDB(): Promise<typeof mongoose> {
     }
 
     // Return existing connection promise if one is in progress
-    if (!cached.promise) {
+    if (!caczhed.promise) {
         // Validate MongoDB URI exists
         if (!MONGODB_URI) {
             throw new Error(

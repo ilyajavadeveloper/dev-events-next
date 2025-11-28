@@ -2,89 +2,134 @@
 
 import Event from "@/database/event.model";
 import connectDB from "@/lib/mongodb";
+import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
+import type { IEvent } from "@/database";
 
-// Нормализуем документ
-function toPlain(doc: any) {
+// ============================================================
+// ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: ПРИВЕСТИ ДОКУМЕНТ К ЧИСТОМУ ВИДУ
+// ============================================================
+type SafeEvent = Omit<IEvent, "_id" | "createdAt" | "updatedAt"> & {
+    _id: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
+function toPlain(event: any) {
+    if (!event) return null;
+
     return {
-        _id: String(doc._id),
-        title: doc.title || "",
-        description: doc.description || "",
-        overview: doc.overview || "",
-        venue: doc.venue || "",
-        location: doc.location || "",
-        date: doc.date || "",
-        time: doc.time || "",
-        mode: doc.mode || "",
-        audience: doc.audience || "",
-        organizer: doc.organizer || "",
-        image: doc.image || "",
-        tags: Array.isArray(doc.tags) ? doc.tags : [],
-        agenda: Array.isArray(doc.agenda) ? doc.agenda : [],
-        createdAt: doc.createdAt?.toString() || "",
-        updatedAt: doc.updatedAt?.toString() || "",
+        ...event,
+        _id: event._id.toString(),
+        createdAt: event.createdAt?.toString() || "",
+        updatedAt: event.updatedAt?.toString() || "",
     };
 }
 
-export async function getEventById(id: string): Promise<any> {
-    await connectDB();
+// ============================================================
+// GET EVENT BY ID
+// ============================================================
 
-    if (!Types.ObjectId.isValid(id)) return null;
+export async function getEventById(id: string): Promise<IEvent | null> {
+    try {
+        await connectDB();
 
-    const doc = (await Event.findById(id).lean()) as any;
-    return doc ? toPlain(doc) : null;
+        if (!Types.ObjectId.isValid(id)) return null;
+
+        const event = await Event.findById(id).lean<IEvent>();
+        return toPlain(event);
+    } catch (e) {
+        console.error("getEventById error:", e);
+        return null;
+    }
 }
 
-export async function getSimilarEventsById(id: string): Promise<any[]> {
-    await connectDB();
-    if (!Types.ObjectId.isValid(id)) return [];
+// ============================================================
+// GET SIMILAR EVENTS
+// ============================================================
 
-    const current = (await Event.findById(id).lean()) as any;
-    if (!current) return [];
+export async function getSimilarEventsById(id: string): Promise<IEvent[]> {
+    try {
+        await connectDB();
 
-    const tags = Array.isArray(current.tags) ? current.tags : [];
+        if (!Types.ObjectId.isValid(id)) return [];
 
-    const docs = (await Event.find({
-        _id: { $ne: current._id },
-        tags: { $in: tags },
-    }).lean()) as any[];
+        const current = await Event.findById(id).lean<IEvent>();
+        if (!current) return [];
 
-    return docs.map(toPlain);
+        const tagList = Array.isArray(current.tags) ? current.tags : [];
+
+        const similar = await Event.find({
+            _id: { $ne: new Types.ObjectId(current._id as any) },
+            tags: { $in: tagList },
+        }).lean<IEvent[]>();
+
+        return similar.map(toPlain) as IEvent[];
+    } catch (e) {
+        console.error("similar events error:", e);
+        return [];
+    }
 }
 
-export async function getAllEvents(): Promise<any[]> {
-    await connectDB();
+// ============================================================
+// GET ALL EVENTS (для /events/manage)
+// ============================================================
 
-    const docs = (await Event.find().sort({ createdAt: -1 }).lean()) as any[];
-    return docs.map(toPlain);
+export async function getAllEvents(): Promise<IEvent[]> {
+    try {
+        await connectDB();
+
+        const events = await Event.find().sort({ createdAt: -1 }).lean<IEvent[]>();
+
+        return events.map(toPlain) as IEvent[];
+    } catch (e) {
+        console.error("Error fetching events", e);
+        return [];
+    }
 }
+
+// ============================================================
+// DELETE EVENT
+// ============================================================
+
+export async function deleteEvent(id: string) {
+    try {
+        await connectDB();
+
+        if (!Types.ObjectId.isValid(id)) return { success: false };
+
+        await Event.findByIdAndDelete(id);
+
+        revalidatePath("/events/manage");
+
+        return { success: true };
+    } catch (err) {
+        console.error("delete event error", err);
+        return { success: false };
+    }
+}
+
+// ============================================================
+// UPDATE EVENT
+// ============================================================
 
 export async function updateEvent(id: string, data: any) {
-    await connectDB();
+    try {
+        await connectDB();
 
-    if (!Types.ObjectId.isValid(id)) return null;
+        if (!Types.ObjectId.isValid(id)) return { success: false };
 
-    await Event.findByIdAndUpdate(
-        id,
-        {
-            ...data,
-            tags: Array.isArray(data.tags)
-                ? data.tags
-                : String(data.tags || "")
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
+        await Event.findByIdAndUpdate(id, data, {
+            new: true,
+            runValidators: true,
+        });
 
-            agenda: Array.isArray(data.agenda)
-                ? data.agenda
-                : String(data.agenda || "")
-                    .split("\n")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
-        },
-        { new: true }
-    );
+        revalidatePath(`/events/${id}`);
+        revalidatePath("/events/manage");
 
-    const doc = (await Event.findById(id).lean()) as any;
-    return doc ? toPlain(doc) : null;
+        return { success: true };
+    } catch (err) {
+        console.error("update event error", err);
+        return { success: false };
+    }
 }
