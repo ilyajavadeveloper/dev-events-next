@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { updateEvent } from "@/lib/actions/event.actions";
 import { useRouter } from "next/navigation";
 
 interface Props {
@@ -43,39 +42,43 @@ export default function EventForm({ type, event }: Props) {
     const handleSubmit = async () => {
         setLoading(true);
 
-        let finalImage = event?.image || "";
+        const formData = new FormData();
 
-        // Если картинку меняют — загружаем новую
-        if (imageFile) {
-            const buffer = await imageFile.arrayBuffer();
-            const bytes = new Uint8Array(buffer);
+        formData.append("title", form.title);
+        formData.append("description", form.description);
+        formData.append("overview", form.overview);
+        formData.append("venue", form.venue);
+        formData.append("location", form.location);
+        formData.append("date", form.date);
+        formData.append("time", form.time);
+        formData.append("mode", form.mode);
+        formData.append("audience", form.audience);
+        formData.append("organizer", form.organizer);
 
-            const uploadRes = await fetch("/api/upload-image", {
-                method: "POST",
-                body: bytes,
-                headers: { "Content-Type": "application/octet-stream" },
-            });
+        formData.append(
+            "agenda",
+            JSON.stringify(form.agenda.split("\n").map((s: string) => s.trim()).filter(Boolean))
+        );
 
-            const json = await uploadRes.json();
-            if (json.secure_url) finalImage = json.secure_url;
-        }
+        formData.append(
+            "tags",
+            JSON.stringify(form.tags.split(",").map((s: string) => s.trim()).filter(Boolean))
+        );
 
-        const payload = {
-            ...form,
-            image: finalImage,
-            agenda: form.agenda.split("\n").map((s: string) => s.trim()).filter(Boolean),
-            tags: form.tags.split(",").map((s: string) => s.trim()).filter(Boolean),
-        };
+        formData.append("currentImage", event?.image || "");
 
-        if (type === "edit") {
-            const res = await updateEvent(event._id.toString(), payload);
+        if (imageFile) formData.append("image", imageFile);
 
-            if (!res.success) {
-                alert("Failed to update event");
-            } else {
-                alert("Event updated successfully");
-                router.push(`/events/${event._id.toString()}`);
-            }
+        const res = await fetch(`/api/events/${event._id}`, {
+            method: "PATCH",
+            body: formData,
+        });
+
+        if (!res.ok) {
+            alert("Failed to update event");
+        } else {
+            alert("Event updated successfully");
+            router.push(`/events/${event._id}`);
         }
 
         setLoading(false);
@@ -105,7 +108,6 @@ export default function EventForm({ type, event }: Props) {
                 className="input h-20"
             />
 
-            {/* ИЗОБРАЖЕНИЕ */}
             <div className="flex flex-col gap-2">
                 <p className="font-semibold">Event Image</p>
 
@@ -118,11 +120,6 @@ export default function EventForm({ type, event }: Props) {
                 )}
 
                 <input type="file" accept="image/*" onChange={handleImage} />
-                {!imageFile && (
-                    <p className="text-gray-400 text-sm">
-                        Current image will stay unless you upload a new one
-                    </p>
-                )}
             </div>
 
             <input
@@ -171,7 +168,7 @@ export default function EventForm({ type, event }: Props) {
             />
 
             <textarea
-                placeholder="Agenda (each item on new line)"
+                placeholder="Agenda (each line = one item)"
                 value={form.agenda}
                 onChange={(e) => updateField("agenda", e.target.value)}
                 className="input h-28"
