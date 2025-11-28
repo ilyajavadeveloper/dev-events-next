@@ -3,41 +3,54 @@ import { v2 as cloudinary } from "cloudinary";
 import connectDB from "@/lib/mongodb";
 import Event from "@/database/event.model";
 
-// ================ UPDATE EVENT (PATCH) ================
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// helper for Cloudinary upload
+function uploadToCloudinary(buffer: Buffer): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            { folder: "DevEvent", resource_type: "image" },
+            (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+            }
+        );
+        stream.end(buffer);
+    });
+}
+
 export async function PATCH(req: NextRequest, { params }: any) {
     try {
         await connectDB();
-
-        const formData = await req.formData();
         const { id } = params;
 
+        const formData = await req.formData();
         const file = formData.get("image") as File | null;
 
-        let finalImage = null;
+        let finalImage = formData.get("currentImage");
 
-        // если не загрузили новое фото → оставляем старое
-        if (!file) {
-            finalImage = formData.get("currentImage");
-        } else {
+        // upload new image if exists
+        if (file) {
             const buffer = Buffer.from(await file.arrayBuffer());
-
-            const uploaded: any = await new Promise((resolve, reject) => {
-                cloudinary.uploader
-                    .upload_stream(
-                        { folder: "DevEvent", resource_type: "image" },
-                        (err, result) => {
-                            if (err) reject(err);
-                            else resolve(result);
-                        }
-                    )
-                    .end(buffer);
-            });
-
+            const uploaded = await uploadToCloudinary(buffer);
             finalImage = uploaded.secure_url;
         }
 
-        const tags = JSON.parse(formData.get("tags") as string);
-        const agenda = JSON.parse(formData.get("agenda") as string);
+        // NORMALIZE DATA
+        const tagsRaw = formData.get("tags") as string;
+        const agendaRaw = formData.get("agenda") as string;
+
+        const tags = tagsRaw
+            ? tagsRaw.split(",").map((t) => t.trim())
+            : [];
+
+        const agenda = agendaRaw
+            ? agendaRaw.split("\n").map((t) => t.trim())
+            : [];
 
         const updateData = {
             title: formData.get("title"),
@@ -70,16 +83,15 @@ export async function PATCH(req: NextRequest, { params }: any) {
             { message: "Event updated", event: updated },
             { status: 200 }
         );
-    } catch (e: any) {
-        console.error("UPDATE EVENT ERROR:", e);
+    } catch (err: any) {
+        console.error("UPDATE EVENT ERROR:", err);
         return NextResponse.json(
-            { message: "Update failed", error: e.message },
+            { message: "Update failed", error: err.message },
             { status: 500 }
         );
     }
 }
 
-// ================ DELETE EVENT ================
 export async function DELETE(req: NextRequest, { params }: any) {
     try {
         await connectDB();
@@ -88,9 +100,9 @@ export async function DELETE(req: NextRequest, { params }: any) {
         await Event.findByIdAndDelete(id);
 
         return NextResponse.json({ message: "Event deleted" }, { status: 200 });
-    } catch (e: any) {
+    } catch (err: any) {
         return NextResponse.json(
-            { message: "Delete failed", error: e.message },
+            { message: "Delete failed", error: err.message },
             { status: 500 }
         );
     }
