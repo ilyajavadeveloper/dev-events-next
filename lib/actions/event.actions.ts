@@ -5,7 +5,7 @@ import connectDB from "@/lib/mongodb";
 import { Types } from "mongoose";
 
 // ----------------------
-// TYPE
+// SAFE TYPE
 // ----------------------
 export type SafeEvent = {
     _id: string;
@@ -31,7 +31,7 @@ export type SafeEvent = {
 // ----------------------
 function toPlain(doc: any): SafeEvent {
     return {
-        _id: doc._id.toString(),
+        _id: String(doc._id),
         title: doc.title ?? "",
         description: doc.description ?? "",
         overview: doc.overview ?? "",
@@ -45,20 +45,20 @@ function toPlain(doc: any): SafeEvent {
         image: doc.image ?? "",
         tags: Array.isArray(doc.tags) ? doc.tags : [],
         agenda: Array.isArray(doc.agenda) ? doc.agenda : [],
-        createdAt: doc.createdAt?.toString() ?? "",
-        updatedAt: doc.updatedAt?.toString() ?? "",
+        createdAt: doc.createdAt ? doc.createdAt.toISOString() : "",
+        updatedAt: doc.updatedAt ? doc.updatedAt.toISOString() : "",
     };
 }
 
 // ----------------------
-// GET ONE EVENT
+// GET ONE EVENT BY ID
 // ----------------------
 export async function getEventById(id: string): Promise<SafeEvent | null> {
     await connectDB();
 
     if (!Types.ObjectId.isValid(id)) return null;
 
-    const doc = await Event.findById(id).lean<any>(); // ❤️ FIX
+    const doc = await Event.findById(id).lean();
 
     if (!doc) return null;
 
@@ -66,14 +66,14 @@ export async function getEventById(id: string): Promise<SafeEvent | null> {
 }
 
 // ----------------------
-// GET SIMILAR
+// GET SIMILAR EVENTS
 // ----------------------
 export async function getSimilarEventsById(id: string): Promise<SafeEvent[]> {
     await connectDB();
 
     if (!Types.ObjectId.isValid(id)) return [];
 
-    const current = await Event.findById(id).lean<any>(); // ❤️ FIX
+    const current = await Event.findById(id).lean();
     if (!current) return [];
 
     const tags = Array.isArray(current.tags) ? current.tags : [];
@@ -81,7 +81,7 @@ export async function getSimilarEventsById(id: string): Promise<SafeEvent[]> {
     const docs = await Event.find({
         _id: { $ne: current._id },
         tags: { $in: tags },
-    }).lean<any[]>(); // ❤️ FIX
+    }).lean();
 
     return docs.map(toPlain);
 }
@@ -92,7 +92,7 @@ export async function getSimilarEventsById(id: string): Promise<SafeEvent[]> {
 export async function getAllEvents(): Promise<SafeEvent[]> {
     await connectDB();
 
-    const docs = await Event.find().sort({ createdAt: -1 }).lean<any[]>(); // ❤️ FIX
+    const docs = await Event.find().sort({ createdAt: -1 }).lean();
 
     return docs.map(toPlain);
 }

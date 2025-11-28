@@ -3,7 +3,13 @@ import Image from "next/image";
 import EventCard from "@/components/EventCard";
 import BookEvent from "@/components/BookEvent";
 
-export default function EventDetails({ event, similarEvents = [] }: any) {
+export default function EventDetails({
+                                         event,
+                                         similarEvents = [],
+                                     }: {
+    event: any;
+    similarEvents: any[];
+}) {
     const {
         image,
         description,
@@ -15,7 +21,7 @@ export default function EventDetails({ event, similarEvents = [] }: any) {
         audience,
         agenda,
         organizer,
-        tags
+        tags,
     } = event;
 
     return (
@@ -42,7 +48,6 @@ export default function EventDetails({ event, similarEvents = [] }: any) {
 
                     <section>
                         <h2>Event Details</h2>
-
                         <p>{date}</p>
                         <p>{time}</p>
                         <p>{location}</p>
@@ -53,8 +58,8 @@ export default function EventDetails({ event, similarEvents = [] }: any) {
                     <section>
                         <h2>Agenda</h2>
                         <ul>
-                            {agenda.map((i: string) => (
-                                <li key={i}>{i}</li>
+                            {agenda.map((i: string, idx: number) => (
+                                <li key={idx}>{i}</li>
                             ))}
                         </ul>
                     </section>
@@ -67,8 +72,10 @@ export default function EventDetails({ event, similarEvents = [] }: any) {
                     <section>
                         <h2>Tags</h2>
                         <div className="flex flex-row gap-2 flex-wrap">
-                            {tags.map((tag: string) => (
-                                <span key={tag} className="pill">{tag}</span>
+                            {tags.map((tag: string, idx: number) => (
+                                <span key={idx} className="pill">
+                                    {tag}
+                                </span>
                             ))}
                         </div>
                     </section>
