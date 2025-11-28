@@ -1,13 +1,12 @@
 import { getEventById } from "@/lib/actions/event.actions";
 import EventForm from "@/components/EventForm";
-import { IEvent } from "@/database";
 
 interface PageProps {
-    params: Promise<{ id: string }>;
+    params: { id: string }; // ❗ обычный объект
 }
 
 export default async function EditEventPage({ params }: PageProps) {
-    const { id } = await params; // ← ВАЖНО
+    const { id } = params; // ❗ убираем await, params не Promise
 
     console.log("EDIT PARAM ID =", id);
 
